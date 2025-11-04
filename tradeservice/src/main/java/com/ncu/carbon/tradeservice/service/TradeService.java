@@ -16,10 +16,11 @@ public class TradeService {
     private final RestTemplate rest;
     private final String userServiceBase;
 
-    public TradeService(TradeRepository repo) {
+    public TradeService(TradeRepository repo, org.springframework.web.client.RestTemplate rest,
+                        org.springframework.beans.factory.annotation.Value("${users.service.base:http://localhost:8082/users}") String userServiceBase) {
         this.repo = repo;
-        this.rest = new RestTemplate();
-        this.userServiceBase = "http://localhost:8082/users"; // keep same base as controller used previously
+        this.rest = rest == null ? new RestTemplate() : rest;
+        this.userServiceBase = userServiceBase;
     }
 
     public List<Trade> listAll() {

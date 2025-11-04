@@ -48,4 +48,35 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         return ResponseEntity.ok(new AuthResponseDto(token));
     }
+    
+    @PostMapping("/authenticate")
+    public ResponseEntity<String> authenticate(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                               @RequestBody(required = false) java.util.Map<String, String> body) {
+        String username = null;
+        String password = null;
+
+        if (authHeader != null && authHeader.toLowerCase().startsWith("basic ")) {
+            try {
+                String base64 = authHeader.substring(6).trim();
+                byte[] decoded = java.util.Base64.getDecoder().decode(base64);
+                String cred = new String(decoded);
+                int idx = cred.indexOf(':');
+                if (idx > 0) {
+                    username = cred.substring(0, idx);
+                    password = cred.substring(idx + 1);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if ((username == null || password == null) && body != null) {
+            username = body.get("username");
+            password = body.get("password");
+        }
+
+        if (username == null || password == null) return ResponseEntity.badRequest().body("missing");
+
+        boolean ok = userService.validateCredentials(username, password);
+        if (ok) return ResponseEntity.ok("ok");
+        return ResponseEntity.status(401).body("unauthorized");
+    }
 }

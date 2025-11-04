@@ -35,4 +35,10 @@ public class UserService {
         }
         return null;
     }
+
+    public boolean validateCredentials(String username, String rawPassword) {
+        User u = repository.findByUsername(username);
+        if (u == null) return false;
+        return passwordEncoder.matches(rawPassword, u.getPassword());
+    }
 }
