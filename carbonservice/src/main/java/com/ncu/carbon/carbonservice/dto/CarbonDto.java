@@ -4,6 +4,8 @@ public class CarbonDto {
     private Long id;
     private String name;
     private Double supply;
+    private Long ownerId;
+    private Double price;
 
     public CarbonDto() {}
 
@@ -11,6 +13,14 @@ public class CarbonDto {
         this.id = id;
         this.name = name;
         this.supply = supply;
+    }
+
+    public CarbonDto(Long id, String name, Double supply, Long ownerId, Double price) {
+        this.id = id;
+        this.name = name;
+        this.supply = supply;
+        this.ownerId = ownerId;
+        this.price = price;
     }
 
     public Long getId() {
@@ -35,5 +45,21 @@ public class CarbonDto {
 
     public void setSupply(Double supply) {
         this.supply = supply;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 }

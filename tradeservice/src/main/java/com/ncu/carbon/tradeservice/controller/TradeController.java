@@ -1,6 +1,7 @@
 package com.ncu.carbon.tradeservice.controller;
 
 import com.ncu.carbon.tradeservice.dto.TradeDto;
+import com.ncu.carbon.tradeservice.dto.CarbonTradeDto;
 import com.ncu.carbon.tradeservice.model.Trade;
 import com.ncu.carbon.tradeservice.service.TradeService;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,13 @@ public class TradeController {
     public ResponseEntity<?> trade(@RequestBody TradeDto dto) {
         Trade created = tradeService.trade(dto);
         if (created == null) return ResponseEntity.badRequest().body("Trade failed");
+        return ResponseEntity.ok(created);
+    }
+
+    @PostMapping("/carbon")
+    public ResponseEntity<?> tradeCarbonCredit(@RequestBody CarbonTradeDto dto) {
+        Trade created = tradeService.tradeCarbonCredit(dto);
+        if (created == null) return ResponseEntity.badRequest().body("Carbon credit trade failed");
         return ResponseEntity.ok(created);
     }
 

@@ -34,31 +34,53 @@ public class CarbonController {
 
     @PostMapping
     public ResponseEntity<CarbonDto> create(@RequestBody CarbonDto dto) {
+        if (dto.getOwnerId() == null || dto.getPrice() == null) {
+            return ResponseEntity.badRequest().build();
+        }
         Carbon created = service.create(fromDto(dto));
         return ResponseEntity.created(URI.create("/carbon/" + created.getId())).body(toDto(created));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody CarbonDto dto) {
+    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody CarbonDto dto, 
+                                       @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        // Check ownership before updating
+        Carbon existing = service.get(id);
+        if (existing == null) return ResponseEntity.notFound().build();
+        
+        if (userId == null || !existing.getOwnerId().equals(userId)) {
+            return ResponseEntity.status(403).build(); // Forbidden
+        }
+        
         Carbon c = fromDto(dto);
         c.setId(id);
+        c.setOwnerId(existing.getOwnerId()); // Preserve owner
         boolean ok = service.update(c);
         if (!ok) return ResponseEntity.notFound().build();
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id, 
+                                       @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        // Check ownership before deleting
+        Carbon existing = service.get(id);
+        if (existing == null) return ResponseEntity.notFound().build();
+        
+        if (userId == null || !existing.getOwnerId().equals(userId)) {
+            return ResponseEntity.status(403).build(); // Forbidden
+        }
+        
         boolean ok = service.delete(id);
         if (!ok) return ResponseEntity.notFound().build();
         return ResponseEntity.noContent().build();
     }
 
     private CarbonDto toDto(Carbon c) {
-        return new CarbonDto(c.getId(), c.getName(), c.getSupply());
+        return new CarbonDto(c.getId(), c.getName(), c.getSupply(), c.getOwnerId(), c.getPrice());
     }
 
     private Carbon fromDto(CarbonDto d) {
-        return new Carbon(d.getId(), d.getName(), d.getSupply());
+        return new Carbon(d.getId(), d.getName(), d.getSupply(), d.getOwnerId(), d.getPrice());
     }
 }

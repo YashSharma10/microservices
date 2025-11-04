@@ -17,7 +17,9 @@ public class UserService {
     }
 
     public User createUser(UserDto dto) {
-        User u = new User(dto.getName(), dto.getCredits());
+        // Default credits to 100 if not specified
+        double credits = dto.getCredits() != null ? dto.getCredits() : 100.0;
+        User u = new User(dto.getName(), credits, 0.0);
         return repository.save(u);
     }
 
@@ -40,6 +42,25 @@ public class UserService {
         User u = ou.get();
         if (u.getCredits() < amount) return Optional.empty();
         u.setCredits(u.getCredits() - amount);
+        repository.save(u);
+        return Optional.of(u);
+    }
+
+    public Optional<User> addBalance(Long id, double amount) {
+        Optional<User> ou = repository.findById(id);
+        if (ou.isEmpty()) return Optional.empty();
+        User u = ou.get();
+        u.setBalance(u.getBalance() + amount);
+        repository.save(u);
+        return Optional.of(u);
+    }
+
+    public Optional<User> removeBalance(Long id, double amount) {
+        Optional<User> ou = repository.findById(id);
+        if (ou.isEmpty()) return Optional.empty();
+        User u = ou.get();
+        if (u.getBalance() < amount) return Optional.empty();
+        u.setBalance(u.getBalance() - amount);
         repository.save(u);
         return Optional.of(u);
     }

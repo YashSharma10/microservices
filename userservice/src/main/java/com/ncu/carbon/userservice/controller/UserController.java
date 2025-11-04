@@ -42,4 +42,17 @@ public class UserController {
         if (ou.isEmpty()) return ResponseEntity.badRequest().build();
         return ResponseEntity.ok(ou.get());
     }
+
+    @PostMapping("/{id}/addBalance")
+    public ResponseEntity<User> addBalance(@PathVariable Long id, @RequestParam double amount) {
+        Optional<User> ou = userService.addBalance(id, amount);
+        return ou.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/removeBalance")
+    public ResponseEntity<User> removeBalance(@PathVariable Long id, @RequestParam double amount) {
+        Optional<User> ou = userService.removeBalance(id, amount);
+        if (ou.isEmpty()) return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok(ou.get());
+    }
 }

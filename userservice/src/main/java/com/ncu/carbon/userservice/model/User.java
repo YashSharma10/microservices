@@ -7,12 +7,21 @@ public class User {
 
     private double credits;
 
+    private double balance;
+
     public User() {
     }
 
     public User(String name, double credits) {
         this.name = name;
         this.credits = credits;
+        this.balance = 0.0;
+    }
+
+    public User(String name, double credits, double balance) {
+        this.name = name;
+        this.credits = credits;
+        this.balance = balance;
     }
 
     public Long getId() {
@@ -37,5 +46,13 @@ public class User {
 
     public void setCredits(double credits) {
         this.credits = credits;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
     }
 }
