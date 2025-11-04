@@ -43,18 +43,24 @@ public class CarbonController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody CarbonDto dto, 
-                                       @RequestHeader(value = "X-User-Id", required = false) Long userId) {
-        // Check ownership before updating
+                                       @RequestHeader(value = "X-User-Id", required = false) Long userId,
+                                       @RequestHeader(value = "X-Service-Request", required = false) String serviceRequest) {
+        // Check ownership before updating (unless it's a service request)
         Carbon existing = service.get(id);
         if (existing == null) return ResponseEntity.notFound().build();
         
-        if (userId == null || !existing.getOwnerId().equals(userId)) {
+        // Allow service-to-service calls to bypass ownership check
+        boolean isServiceRequest = "true".equalsIgnoreCase(serviceRequest);
+        
+        if (!isServiceRequest && (userId == null || !existing.getOwnerId().equals(userId))) {
             return ResponseEntity.status(403).build(); // Forbidden
         }
         
         Carbon c = fromDto(dto);
         c.setId(id);
-        c.setOwnerId(existing.getOwnerId()); // Preserve owner
+        if (!isServiceRequest) {
+            c.setOwnerId(existing.getOwnerId()); // Preserve owner for user requests
+        }
         boolean ok = service.update(c);
         if (!ok) return ResponseEntity.notFound().build();
         return ResponseEntity.noContent().build();

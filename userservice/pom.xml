@@ -21,16 +21,12 @@
         </dependency>
         <!-- NOTE: Add MySQL connector in production if needed. Removed here so tests run without requiring external downloads. -->
         <!-- H2 for tests and quick local runs -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+        
         <!-- MySQL connector for production/runtime -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.34</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.1.0</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
