@@ -1,0 +1,282 @@
+═══════════════════════════════════════════════════════════════════════════
+                        CARBON CREDIT TRADING PLATFORM
+                              High-Level Overview
+═══════════════════════════════════════════════════════════════════════════
+
+WHAT IS THIS PROJECT?
+─────────────────────
+This is a microservices-based platform that allows users to trade carbon 
+credits. Think of it like a marketplace where companies or individuals can 
+buy and sell carbon credits to offset their carbon footprint. Users can 
+create listings for their carbon credits, and others can purchase them using 
+their account balance.
+
+The system is built using Spring Boot microservices architecture, which means 
+instead of one big application, we have multiple small services that each do 
+one thing really well and work together to provide the complete functionality.
+
+
+THE SERVICES
+────────────
+We have 7 main services in total. Here's what each one does:
+
+
+1. CONFIGURATION SERVER (Port 8888)
+   What it does: Stores all the configuration settings for other services in 
+                 one place (a Git repository). This way, when we need to change 
+                 a setting, we don't have to redeploy every service.
+   Database: None
+   Think of it as: The settings manager for the entire system
+
+
+2. SERVICE DISCOVERY / EUREKA (Port 8761)
+   What it does: Keeps track of which services are running and where they are.
+                 When Service A wants to talk to Service B, it asks Eureka 
+                 "where is Service B?" instead of hardcoding the location.
+   Database: None
+   Think of it as: A phone directory for services
+
+
+3. API GATEWAY (Port 8080)
+   What it does: The main entrance to our system. All user requests come here
+                 first. It checks if the user is authenticated, then forwards 
+                 the request to the right service.
+   Database: None
+   Routes:
+     - /auth/**     → Auth Service (handles login/signup)
+     - /users/**    → User Service (manages user profiles)
+     - /carbon/**   → Carbon Service (manages carbon credit listings)
+     - /trades/**   → Trade Service (handles buying/selling)
+   Think of it as: The front door and security guard of the system
+
+
+4. AUTH SERVICE (Port 8081)
+   What it does: Handles user authentication - signup, login, and verifying 
+                 if someone is who they say they are.
+   Database: authdb (MySQL)
+   Schema:
+     • users table: stores username and encrypted password
+   
+   Endpoints:
+     POST /auth/signup       - Create a new account
+     POST /auth/login        - Log in and get a token
+     POST /auth/authenticate - Verify credentials (used internally)
+   
+   Think of it as: The bouncer who checks IDs at the entrance
+
+
+5. USER SERVICE (Port 8082)
+   What it does: Manages user profiles, their carbon credit balance, and their
+                 account balance (money).
+   Database: carboncreditdb (MySQL)
+   Schema:
+     • users table: id, name, credits (how many credits they own), 
+                    balance (money in their account)
+   
+   Endpoints:
+     POST /users                       - Create user profile
+     GET  /users/{id}                  - Get user details
+     POST /users/{id}/addCredits       - Add credits to account
+     POST /users/{id}/removeCredits    - Remove credits from account
+     POST /users/{id}/addBalance       - Add money to account
+     POST /users/{id}/removeBalance    - Remove money from account
+   
+   Think of it as: The account manager who keeps track of everyone's balances
+
+
+6. CARBON SERVICE (Port 8083)
+   What it does: Manages carbon credit listings. Users create listings here 
+                 when they want to sell their credits.
+   Database: carbondb (MySQL)
+   Schema:
+     • carbon table: id, name (description), supply (quantity available),
+                     owner_id (who's selling), price (cost per credit)
+   
+   Endpoints:
+     GET    /carbon      - See all carbon credit listings
+     GET    /carbon/{id} - Get specific listing details
+     POST   /carbon      - Create a new listing (sell credits)
+     PUT    /carbon/{id} - Update a listing
+     DELETE /carbon/{id} - Remove a listing
+   
+   Think of it as: The marketplace display where sellers list their products
+
+
+7. TRADE SERVICE (Port 8084)
+   What it does: Handles the actual trading - when someone buys carbon credits,
+                 this service coordinates moving money and credits between users.
+   Database: tradedb (MySQL)
+   Schema:
+     • trades table: id, from_user_id, to_user_id, amount, created_at
+                     (keeps a record of every transaction)
+   
+   Endpoints:
+     POST /trades        - Simple transfer of credits between users
+     POST /trades/carbon - Buy carbon credits from a listing
+     GET  /trades        - View all trade history
+     GET  /trades/{id}   - Get specific trade details
+   
+   Think of it as: The transaction processor that makes sure trades happen 
+                   correctly
+
+
+HOW THEY WORK TOGETHER
+───────────────────────
+
+The Startup Dance:
+  1. Configuration Server wakes up first and gets ready
+  2. Eureka (Service Discovery) starts and registers itself
+  3. All business services (Auth, User, Carbon, Trade) start up and tell 
+     Eureka "Hey, I'm here and this is where to find me!"
+  4. API Gateway starts last and is ready to route requests
+
+When a User Makes a Request:
+  1. User sends request to API Gateway (port 8080)
+  2. Gateway checks: "Are you logged in?" by asking Auth Service
+  3. If yes, Gateway asks Eureka: "Where is the service I need?"
+  4. Gateway forwards the request to the correct service
+  5. Service does its job and sends response back
+  6. Gateway passes response to user
+
+
+A COMPLETE USER JOURNEY
+────────────────────────
+
+Let me walk you through what happens when Alice wants to buy carbon credits 
+from Bob:
+
+STEP 1: Alice and Bob Sign Up
+  → Alice: POST /auth/signup {"username":"alice", "password":"secret123"}
+  → Auth Service creates account in authdb
+  → Bob does the same
+
+STEP 2: They Create Their Profiles
+  → Alice: POST /users {"name":"Alice Smith", "credits":50, "balance":5000}
+  → User Service creates profile (let's say she gets ID: 1)
+  → Bob: POST /users {"name":"Bob Jones", "credits":200, "balance":0}
+  → User Service creates profile (Bob gets ID: 2)
+
+STEP 3: Bob Creates a Carbon Credit Listing
+  → Bob: POST /carbon {"name":"Solar Panel Credits", "supply":100, 
+                       "ownerId":2, "price":40.0}
+  → Carbon Service creates listing (ID: 5)
+  → This means Bob is selling 100 credits at $40 each
+
+STEP 4: Alice Buys 25 Credits from Bob
+  → Alice: POST /trades/carbon {"buyerId":1, "carbonId":5, "quantity":25}
+  
+  Now Trade Service gets busy and does ALL of this:
+    a) Checks Bob's listing: 100 credits available at $40 each
+    b) Calculates cost: 25 × $40 = $1,000
+    c) Checks if Alice has $1,000 → Yes, she has $5,000
+    d) Takes $1,000 from Alice's balance (now she has $4,000)
+    e) Gives $1,000 to Bob's balance (now he has $1,000)
+    f) Takes 25 credits from Bob (he had 200, now has 175)
+    g) Gives 25 credits to Alice (she had 50, now has 75)
+    h) Updates Bob's listing (supply goes from 100 to 75)
+    i) Records the trade in the database
+  
+  → Returns: Trade successful!
+
+Final Result:
+  • Alice: 75 credits, $4,000 balance (bought 25 credits for $1,000)
+  • Bob: 175 credits, $1,000 balance (sold 25 credits, earned $1,000)
+  • Bob's Listing: 75 credits still available for sale
+
+
+THE MAGIC OF MICROSERVICES
+───────────────────────────
+
+Notice how the Trade Service talked to both User Service and Carbon Service?
+It doesn't call them directly. Here's the flow:
+
+  Trade Service → API Gateway (using service credentials)
+                     ↓
+             Authenticates the service
+                     ↓
+             Finds User/Carbon Service via Eureka
+                     ↓
+             Routes the request
+                     ↓
+             Returns response to Trade Service
+
+This means:
+  • Services don't need to know each other's exact locations
+  • We can run multiple copies of any service for scalability
+  • If one service goes down, we can restart it without touching others
+  • We can update one service without redeploying everything
+
+
+SECURITY
+────────
+Every request (except login/signup) needs authentication. Users send their
+username and password (Base64 encoded) with each request. The API Gateway
+checks with Auth Service to make sure they're legit before allowing the
+request through.
+
+Services also have their own special credentials to talk to each other,
+so random people can't just call our internal APIs.
+
+
+DATABASES
+─────────
+Each service has its own database - this is called "database per service"
+pattern:
+  • authdb        → Auth Service (stores usernames & passwords)
+  • carboncreditdb → User Service (stores profiles & balances)
+  • carbondb      → Carbon Service (stores listings)
+  • tradedb       → Trade Service (stores transaction history)
+
+This way, services are truly independent and can't accidentally mess with
+each other's data.
+
+
+KEY ENDPOINTS FOR USERS
+────────────────────────
+All requests go through: http://localhost:8080
+
+Authentication:
+  POST /auth/signup  - Create account
+  POST /auth/login   - Log in
+
+User Management:
+  POST /users        - Create profile
+  GET  /users/{id}   - View profile
+
+Carbon Credits:
+  GET  /carbon       - Browse available credits
+  POST /carbon       - List credits for sale
+  GET  /carbon/{id}  - View listing details
+
+Trading:
+  POST /trades/carbon - Buy carbon credits
+  GET  /trades        - View trade history
+
+
+RUNNING THE SYSTEM
+──────────────────
+Start in this order:
+  1. MySQL database
+  2. Configuration Server (8888)
+  3. Service Discovery (8761)
+  4. Auth Service (8081)
+  5. User Service (8082)
+  6. Carbon Service (8083)
+  7. Trade Service (8084)
+  8. API Gateway (8080)
+
+Once everything is running, you can access:
+  • User API: http://localhost:8080
+  • Eureka Dashboard: http://localhost:8761
+  • Config Server: http://localhost:8888
+
+
+THAT'S IT!
+──────────
+This system lets users trade carbon credits in a clean, scalable way. Each
+service does one job well, they communicate through the API Gateway, and 
+everything is tracked in separate databases. If we need to add features 
+(like a notification service or a reporting service), we just add another
+microservice without touching the existing ones.
+
+═══════════════════════════════════════════════════════════════════════════
