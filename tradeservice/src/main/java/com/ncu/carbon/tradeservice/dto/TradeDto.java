@@ -1,8 +1,14 @@
 package com.ncu.carbon.tradeservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class TradeDto {
+    @JsonProperty("fromUserId")
     private Long from;
+    
+    @JsonProperty("toUserId")
     private Long to;
+    
     private double amount;
 
     public TradeDto() {}

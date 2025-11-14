@@ -2,6 +2,7 @@ C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbo
 C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbon\userservice\controller\UserController.java
 C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbon\userservice\UserServiceApplication.java
 C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbon\userservice\dto\UserDto.java
+C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbon\userservice\config\SecurityConfig.java
 C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbon\userservice\repository\JdbcUserRepository.java
 C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbon\userservice\repository\UserRepository.java
 C:\Users\yashs\Music\Coding\carboncredit\userservice\src\main\java\com\ncu\carbon\userservice\service\UserService.java

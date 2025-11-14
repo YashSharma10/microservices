@@ -70,7 +70,11 @@ public class AuthController {
         }
 
         if ((username == null || password == null) && body != null) {
-            username = body.get("username");
+            // Support both "email" and "username" fields for API gateway compatibility
+            username = body.get("email");
+            if (username == null) {
+                username = body.get("username");
+            }
             password = body.get("password");
         }
 
