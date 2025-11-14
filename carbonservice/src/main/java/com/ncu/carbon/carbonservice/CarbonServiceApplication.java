@@ -8,6 +8,11 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @EnableDiscoveryClient
 public class CarbonServiceApplication {
     public static void main(String[] args) {
-        SpringApplication.run(CarbonServiceApplication.class, args);
+        try {
+            SpringApplication.run(CarbonServiceApplication.class, args);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }

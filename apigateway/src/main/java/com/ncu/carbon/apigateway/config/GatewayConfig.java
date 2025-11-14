@@ -18,34 +18,42 @@ public class GatewayConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-        http
-            .csrf(csrf -> csrf.disable())
-            .authorizeExchange(exchange -> exchange
-                .pathMatchers("/auth/**").permitAll()
-                .pathMatchers("/actuator/**").permitAll()
-                .anyExchange().permitAll()
-            )
-            .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-            .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
-        return http.build();
+        try {
+            http
+                .csrf(csrf -> csrf.disable())
+                .authorizeExchange(exchange -> exchange
+                    .pathMatchers("/auth/**").permitAll()
+                    .pathMatchers("/actuator/**").permitAll()
+                    .anyExchange().permitAll()
+                )
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
+            return http.build();
+        } catch (Exception e) {
+            throw new RuntimeException("Error configuring gateway security: " + e.getMessage(), e);
+        }
     }
 
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder)
     {
-        return builder.routes()
-            .route("carbonservice", r -> r.path("/carbon/**")
-                .uri("lb://carbonservice"))
+        try {
+            return builder.routes()
+                .route("carbonservice", r -> r.path("/carbon/**")
+                    .uri("lb://carbonservice"))
 
-            .route("tradeservice", r -> r.path("/trades/**")
-                .uri("lb://tradeservice"))
+                .route("tradeservice", r -> r.path("/trades/**")
+                    .uri("lb://tradeservice"))
 
-            .route("userservice", r -> r.path("/users/**")
-                .uri("lb://userservice"))
+                .route("userservice", r -> r.path("/users/**")
+                    .uri("lb://userservice"))
 
-            .route("authservice", r -> r.path("/auth/**")
-                .uri("lb://authservice"))
-            .build();
+                .route("authservice", r -> r.path("/auth/**")
+                    .uri("lb://authservice"))
+                .build();
+        } catch (Exception e) {
+            throw new RuntimeException("Error configuring routes: " + e.getMessage(), e);
+        }
     }
         
     @Bean

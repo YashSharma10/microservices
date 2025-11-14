@@ -20,25 +20,37 @@ public class UserService {
     }
 
     public boolean createUser(String username, String rawPassword) {
-        if (repository.existsByUsername(username)) return false;
-        String hashed = passwordEncoder.encode(rawPassword);
-        User u = new User(null, username, hashed);
-        repository.save(u);
-        return true;
+        try {
+            if (repository.existsByUsername(username)) return false;
+            String hashed = passwordEncoder.encode(rawPassword);
+            User u = new User(null, username, hashed);
+            repository.save(u);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String loginAndCreateToken(String username, String rawPassword) {
-        User u = repository.findByUsername(username);
-        if (u == null) return null;
-        if (passwordEncoder.matches(rawPassword, u.getPassword())) {
-            return jwtUtil.generateToken(username);
+        try {
+            User u = repository.findByUsername(username);
+            if (u == null) return null;
+            if (passwordEncoder.matches(rawPassword, u.getPassword())) {
+                return jwtUtil.generateToken(username);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 
     public boolean validateCredentials(String username, String rawPassword) {
-        User u = repository.findByUsername(username);
-        if (u == null) return false;
-        return passwordEncoder.matches(rawPassword, u.getPassword());
+        try {
+            User u = repository.findByUsername(username);
+            if (u == null) return false;
+            return passwordEncoder.matches(rawPassword, u.getPassword());
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

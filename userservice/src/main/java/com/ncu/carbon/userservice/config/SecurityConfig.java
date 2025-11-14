@@ -12,11 +12,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf().disable()
-            .authorizeRequests()
-                .anyRequest().permitAll();
-        
-        return http.build();
+        try {
+            http
+                .csrf().disable()
+                .authorizeRequests()
+                    .anyRequest().permitAll();
+            
+            return http.build();
+        } catch (Exception e) {
+            throw new RuntimeException("Error configuring security: " + e.getMessage(), e);
+        }
     }
 }

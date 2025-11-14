@@ -8,6 +8,11 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @EnableDiscoveryClient
 public class TradeServiceApplication {
     public static void main(String[] args) {
-        SpringApplication.run(TradeServiceApplication.class, args);
+        try {
+            SpringApplication.run(TradeServiceApplication.class, args);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }

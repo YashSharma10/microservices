@@ -23,24 +23,28 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
-        String token = null;
-        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
-            token = header.substring(7);
-        }
-
-        if (token != null) {
-            try {
-                String username = jwtUtil.validateAndGetUsername(token);
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (Exception ex) {
-                // invalid token - clear context
-                SecurityContextHolder.clearContext();
+        try {
+            String header = request.getHeader("Authorization");
+            String token = null;
+            if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
+                token = header.substring(7);
             }
-        }
 
-        filterChain.doFilter(request, response);
+            if (token != null) {
+                try {
+                    String username = jwtUtil.validateAndGetUsername(token);
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } catch (Exception ex) {
+                    // invalid token - clear context
+                    SecurityContextHolder.clearContext();
+                }
+            }
+
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            throw new ServletException("Error in JWT filter: " + e.getMessage(), e);
+        }
     }
 }

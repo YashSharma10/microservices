@@ -33,38 +33,58 @@ public class JdbcCarbonRepository implements CarbonRepository {
 
     @Override
     public List<Carbon> findAll() {
-        return jdbc.query("SELECT id, name, supply, owner_id, price FROM carbon", mapper);
+        try {
+            return jdbc.query("SELECT id, name, supply, owner_id, price FROM carbon", mapper);
+        } catch (Exception e) {
+            throw new RuntimeException("Error finding all carbon credits: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public Carbon findById(Long id) {
         try {
-            return jdbc.queryForObject("SELECT id, name, supply, owner_id, price FROM carbon WHERE id = ?", new Object[]{id}, mapper);
-        } catch (Exception ex) {
+            try {
+                return jdbc.queryForObject("SELECT id, name, supply, owner_id, price FROM carbon WHERE id = ?", new Object[]{id}, mapper);
+            } catch (Exception ex) {
+                return null;
+            }
+        } catch (Exception e) {
             return null;
         }
     }
 
     @Override
     public Carbon save(Carbon carbon) {
-        jdbc.update("INSERT INTO carbon(name, supply, owner_id, price) VALUES(?,?,?,?)", 
-            carbon.getName(), carbon.getSupply(), carbon.getOwnerId(), carbon.getPrice());
-        Long id = jdbc.queryForObject("SELECT id FROM carbon WHERE name = ? AND owner_id = ? ORDER BY id DESC LIMIT 1", 
-            Long.class, carbon.getName(), carbon.getOwnerId());
-        carbon.setId(id);
-        return carbon;
+        try {
+            jdbc.update("INSERT INTO carbon(name, supply, owner_id, price) VALUES(?,?,?,?)", 
+                carbon.getName(), carbon.getSupply(), carbon.getOwnerId(), carbon.getPrice());
+            Long id = jdbc.queryForObject("SELECT id FROM carbon WHERE name = ? AND owner_id = ? ORDER BY id DESC LIMIT 1", 
+                Long.class, carbon.getName(), carbon.getOwnerId());
+            carbon.setId(id);
+            return carbon;
+        } catch (Exception e) {
+            throw new RuntimeException("Error saving carbon credit: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public boolean update(Carbon carbon) {
-        int updated = jdbc.update("UPDATE carbon SET name = ?, supply = ?, price = ? WHERE id = ?", 
-            carbon.getName(), carbon.getSupply(), carbon.getPrice(), carbon.getId());
-        return updated > 0;
+        try {
+            int updated = jdbc.update("UPDATE carbon SET name = ?, supply = ?, price = ? WHERE id = ?", 
+                carbon.getName(), carbon.getSupply(), carbon.getPrice(), carbon.getId());
+            return updated > 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     public boolean deleteById(Long id) {
-        int deleted = jdbc.update("DELETE FROM carbon WHERE id = ?", id);
-        return deleted > 0;
+        try {
+            int deleted = jdbc.update("DELETE FROM carbon WHERE id = ?", id);
+            return deleted > 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

@@ -21,25 +21,37 @@ public class JdbcTradeRepository implements TradeRepository {
 
     @Override
     public Trade save(Trade t) {
-        jdbc.update("INSERT INTO trades(from_user_id, to_user_id, amount) VALUES(?,?,?)",
-                t.getFromUserId(), t.getToUserId(), t.getAmount());
-        Long id = jdbc.queryForObject("SELECT id FROM trades WHERE from_user_id = ? AND to_user_id = ? ORDER BY id DESC LIMIT 1",
-                Long.class, t.getFromUserId(), t.getToUserId());
-        t.setId(id);
-        t.setCreatedAt(LocalDateTime.now());
-        return t;
+        try {
+            jdbc.update("INSERT INTO trades(from_user_id, to_user_id, amount) VALUES(?,?,?)",
+                    t.getFromUserId(), t.getToUserId(), t.getAmount());
+            Long id = jdbc.queryForObject("SELECT id FROM trades WHERE from_user_id = ? AND to_user_id = ? ORDER BY id DESC LIMIT 1",
+                    Long.class, t.getFromUserId(), t.getToUserId());
+            t.setId(id);
+            t.setCreatedAt(LocalDateTime.now());
+            return t;
+        } catch (Exception e) {
+            throw new RuntimeException("Error saving trade: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public List<Trade> findAll() {
-        return jdbc.query("SELECT id, from_user_id, to_user_id, amount, created_at FROM trades ORDER BY id DESC", new TradeRowMapper());
+        try {
+            return jdbc.query("SELECT id, from_user_id, to_user_id, amount, created_at FROM trades ORDER BY id DESC", new TradeRowMapper());
+        } catch (Exception e) {
+            throw new RuntimeException("Error finding all trades: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public Trade findById(Long id) {
         try {
-            return jdbc.queryForObject("SELECT id, from_user_id, to_user_id, amount, created_at FROM trades WHERE id = ?", new Object[]{id}, new TradeRowMapper());
-        } catch (Exception ex) {
+            try {
+                return jdbc.queryForObject("SELECT id, from_user_id, to_user_id, amount, created_at FROM trades WHERE id = ?", new Object[]{id}, new TradeRowMapper());
+            } catch (Exception ex) {
+                return null;
+            }
+        } catch (Exception e) {
             return null;
         }
     }

@@ -28,32 +28,49 @@ public class RestConfig {
     @Bean
     @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder
-            .interceptors(authForwardingInterceptor())
-            .build();
+        try {
+            return builder
+                .interceptors(authForwardingInterceptor())
+                .build();
+        } catch (Exception e) {
+            throw new RuntimeException("Error configuring RestTemplate: " + e.getMessage(), e);
+        }
     }
 
     private ClientHttpRequestInterceptor authForwardingInterceptor() {
         return (request, body, execution) -> {
-            // Try to forward the Authorization header from the incoming request
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest httpRequest = attributes.getRequest();
-                String authHeader = httpRequest.getHeader("Authorization");
-                if (authHeader != null && !authHeader.isEmpty()) {
-                    request.getHeaders().add("Authorization", authHeader);
-                    // Mark this as a service-to-service request
-                    request.getHeaders().add("X-Service-Request", "true");
-                    return execution.execute(request, body);
+            try {
+                // Try to forward the original Authorization header from the incoming request
+                ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                if (attributes != null) {
+                    HttpServletRequest httpRequest = attributes.getRequest();
+                    // First check for original auth header (preserved by API Gateway)
+                    String originalAuthHeader = httpRequest.getHeader("X-Original-Authorization");
+                    if (originalAuthHeader != null && !originalAuthHeader.isEmpty()) {
+                        request.getHeaders().add("Authorization", originalAuthHeader);
+                        // Mark this as a service-to-service request
+                        request.getHeaders().add("X-Service-Request", "true");
+                        return execution.execute(request, body);
+                    }
+                    // Fallback to current Authorization header
+                    String authHeader = httpRequest.getHeader("Authorization");
+                    if (authHeader != null && !authHeader.isEmpty()) {
+                        request.getHeaders().add("Authorization", authHeader);
+                        // Mark this as a service-to-service request
+                        request.getHeaders().add("X-Service-Request", "true");
+                        return execution.execute(request, body);
+                    }
                 }
+                
+                // Fallback to service credentials if no user auth is present
+                String auth = serviceUsername + ":" + servicePassword;
+                String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+                request.getHeaders().add("Authorization", "Basic " + encodedAuth);
+                request.getHeaders().add("X-Service-Request", "true");
+                return execution.execute(request, body);
+            } catch (Exception e) {
+                throw new RuntimeException("Error in auth forwarding interceptor: " + e.getMessage(), e);
             }
-            
-            // Fallback to service credentials if no user auth is present
-            String auth = serviceUsername + ":" + servicePassword;
-            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-            request.getHeaders().add("Authorization", "Basic " + encodedAuth);
-            request.getHeaders().add("X-Service-Request", "true");
-            return execution.execute(request, body);
         };
     }
 }

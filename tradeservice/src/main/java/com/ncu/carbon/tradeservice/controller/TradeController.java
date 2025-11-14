@@ -26,27 +26,43 @@ public class TradeController {
 
     @PostMapping
     public ResponseEntity<?> trade(@RequestBody TradeDto dto) {
-        Trade created = tradeService.trade(dto);
-        if (created == null) return ResponseEntity.badRequest().body("Trade failed");
-        return ResponseEntity.ok(created);
+        try {
+            Trade created = tradeService.trade(dto);
+            if (created == null) return ResponseEntity.badRequest().body("Trade failed");
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Internal server error: " + e.getMessage());
+        }
     }
 
     @PostMapping("/carbon")
     public ResponseEntity<?> tradeCarbonCredit(@RequestBody CarbonTradeDto dto) {
-        Trade created = tradeService.tradeCarbonCredit(dto);
-        if (created == null) return ResponseEntity.badRequest().body("Carbon credit trade failed");
-        return ResponseEntity.ok(created);
+        try {
+            Trade created = tradeService.tradeCarbonCredit(dto);
+            if (created == null) return ResponseEntity.badRequest().body("Carbon credit trade failed");
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Internal server error: " + e.getMessage());
+        }
     }
 
     @GetMapping
     public List<Trade> list() {
-        return tradeService.listAll();
+        try {
+            return tradeService.listAll();
+        } catch (Exception e) {
+            throw new RuntimeException("Error listing trades: " + e.getMessage(), e);
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Trade> get(@PathVariable Long id) {
-        Trade t = tradeService.get(id);
-        if (t == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(t);
+        try {
+            Trade t = tradeService.get(id);
+            if (t == null) return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(t);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 }

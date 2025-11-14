@@ -25,12 +25,12 @@ SERVICES CODED BY EACH MEMBER
 
 YASH SHARMA (22CSU295):
   • Auth Service (Port 8081)
-  • Configuration Server (Port 8888)
+  • API Gateway (Port 8080)
   • Service Discovery/Eureka (Port 8761)
   • Trade Service (Port 8084)
 
 MUKUL YADAV (22CSU301):
-  • API Gateway (Port 8080)
+  • Configuration Server (Port 8888)
   • User Service (Port 8082)
   • Carbon Service (Port 8083)
 

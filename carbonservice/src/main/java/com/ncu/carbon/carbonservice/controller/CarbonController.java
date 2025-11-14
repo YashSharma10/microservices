@@ -22,64 +22,84 @@ public class CarbonController {
 
     @GetMapping
     public List<CarbonDto> list() {
-        return service.listAll().stream().map(this::toDto).collect(Collectors.toList());
+        try {
+            return service.listAll().stream().map(this::toDto).collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Error listing carbon credits: " + e.getMessage(), e);
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CarbonDto> get(@PathVariable Long id) {
-        Carbon c = service.get(id);
-        if (c == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(toDto(c));
+        try {
+            Carbon c = service.get(id);
+            if (c == null) return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(toDto(c));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @PostMapping
     public ResponseEntity<CarbonDto> create(@RequestBody CarbonDto dto) {
-        if (dto.getOwnerId() == null || dto.getPrice() == null) {
-            return ResponseEntity.badRequest().build();
+        try {
+            if (dto.getOwnerId() == null || dto.getPrice() == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            Carbon created = service.create(fromDto(dto));
+            return ResponseEntity.created(URI.create("/carbon/" + created.getId())).body(toDto(created));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
-        Carbon created = service.create(fromDto(dto));
-        return ResponseEntity.created(URI.create("/carbon/" + created.getId())).body(toDto(created));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody CarbonDto dto, 
                                        @RequestHeader(value = "X-User-Id", required = false) Long userId,
                                        @RequestHeader(value = "X-Service-Request", required = false) String serviceRequest) {
-        // Check ownership before updating (unless it's a service request)
-        Carbon existing = service.get(id);
-        if (existing == null) return ResponseEntity.notFound().build();
-        
-        // Allow service-to-service calls to bypass ownership check
-        boolean isServiceRequest = "true".equalsIgnoreCase(serviceRequest);
-        
-        if (!isServiceRequest && (userId == null || !existing.getOwnerId().equals(userId))) {
-            return ResponseEntity.status(403).build(); // Forbidden
+        try {
+            // Check ownership before updating (unless it's a service request)
+            Carbon existing = service.get(id);
+            if (existing == null) return ResponseEntity.notFound().build();
+            
+            // Allow service-to-service calls to bypass ownership check
+            boolean isServiceRequest = "true".equalsIgnoreCase(serviceRequest);
+            
+            if (!isServiceRequest && (userId == null || !existing.getOwnerId().equals(userId))) {
+                return ResponseEntity.status(403).build(); // Forbidden
+            }
+            
+            Carbon c = fromDto(dto);
+            c.setId(id);
+            if (!isServiceRequest) {
+                c.setOwnerId(existing.getOwnerId()); // Preserve owner for user requests
+            }
+            boolean ok = service.update(c);
+            if (!ok) return ResponseEntity.notFound().build();
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
-        
-        Carbon c = fromDto(dto);
-        c.setId(id);
-        if (!isServiceRequest) {
-            c.setOwnerId(existing.getOwnerId()); // Preserve owner for user requests
-        }
-        boolean ok = service.update(c);
-        if (!ok) return ResponseEntity.notFound().build();
-        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id, 
                                        @RequestHeader(value = "X-User-Id", required = false) Long userId) {
-        // Check ownership before deleting
-        Carbon existing = service.get(id);
-        if (existing == null) return ResponseEntity.notFound().build();
-        
-        if (userId == null || !existing.getOwnerId().equals(userId)) {
-            return ResponseEntity.status(403).build(); // Forbidden
+        try {
+            // Check ownership before deleting
+            Carbon existing = service.get(id);
+            if (existing == null) return ResponseEntity.notFound().build();
+            
+            if (userId == null || !existing.getOwnerId().equals(userId)) {
+                return ResponseEntity.status(403).build(); // Forbidden
+            }
+            
+            boolean ok = service.delete(id);
+            if (!ok) return ResponseEntity.notFound().build();
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
-        
-        boolean ok = service.delete(id);
-        if (!ok) return ResponseEntity.notFound().build();
-        return ResponseEntity.noContent().build();
     }
 
     private CarbonDto toDto(Carbon c) {

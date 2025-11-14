@@ -16,22 +16,42 @@ public class CarbonService {
     }
 
     public List<Carbon> listAll() {
-        return repository.findAll();
+        try {
+            return repository.findAll();
+        } catch (Exception e) {
+            throw new RuntimeException("Error listing carbon credits: " + e.getMessage(), e);
+        }
     }
 
     public Carbon get(Long id) {
-        return repository.findById(id);
+        try {
+            return repository.findById(id);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public Carbon create(Carbon c) {
-        return repository.save(c);
+        try {
+            return repository.save(c);
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating carbon credit: " + e.getMessage(), e);
+        }
     }
 
     public boolean update(Carbon c) {
-        return repository.update(c);
+        try {
+            return repository.update(c);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public boolean delete(Long id) {
-        return repository.deleteById(id);
+        try {
+            return repository.deleteById(id);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
