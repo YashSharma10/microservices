@@ -1,7 +1,10 @@
 package com.ncu.carbon.userservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class UserDto {
     private Long id;
+    @JsonProperty("username")
     private String name;
     private Double credits;
 
